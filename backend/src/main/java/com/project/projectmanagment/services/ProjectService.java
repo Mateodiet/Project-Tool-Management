@@ -344,13 +344,19 @@ public class ProjectService {
 
     private String validateRole(String role) {
         if (role == null || role.isEmpty()) {
-            return "MEMBER";
+            return "MEMBRE";
         }
         String upperRole = role.toUpperCase();
-        if (upperRole.equals("ADMIN") || upperRole.equals("MEMBER") || upperRole.equals("OBSERVER")) {
-            return upperRole;
+        if (upperRole.equals("ADMIN") || upperRole.equals("ADMINISTRATEUR")) {
+            return "ADMIN";
         }
-        return "MEMBER";
+        if (upperRole.equals("MEMBRE") || upperRole.equals("MEMBER")) {
+            return "MEMBRE";
+        }
+        if (upperRole.equals("OBSERVATEUR") || upperRole.equals("OBSERVER")) {
+            return "OBSERVATEUR";
+        }
+        return "MEMBRE";
     }
 
     private ProjectDTO toDTO(ProjectEntity project, UserEntity creator) {

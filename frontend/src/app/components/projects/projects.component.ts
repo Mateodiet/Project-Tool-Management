@@ -31,7 +31,7 @@ import { Project } from '../../models/project.model';
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let project of projects" data-testid="row-project-{{ project.projectId }}">
+            <tr *ngFor="let project of projects" [attr.data-testid]="'row-project-' + project.projectId">
               <td data-testid="text-project-name">{{ project.projectName }}</td>
               <td>{{ project.projectDescription || '-' }}</td>
               <td>{{ project.projectStartDate || '-' }}</td>

@@ -26,7 +26,7 @@ import { User } from '../../models/user.model';
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let user of users" data-testid="row-user-{{ user.userId }}">
+            <tr *ngFor="let user of users" [attr.data-testid]="'row-user-' + user.userId">
               <td data-testid="text-user-id">{{ user.userId }}</td>
               <td data-testid="text-user-name">{{ user.name }}</td>
               <td data-testid="text-user-email">{{ user.email }}</td>

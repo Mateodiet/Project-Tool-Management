@@ -3,7 +3,7 @@ version: '3.8'
 services:
   mysql:
     image: mysql:8.0
-    container_name: pmt-mysql
+    container_name: pmt-mysql-app
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: pmt_db
@@ -25,7 +25,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: pmt-backend
+    container_name: pmt-backend-app
     environment:
       MYSQL_HOST: mysql
       MYSQL_PORT: 3306
@@ -49,7 +49,7 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: pmt-frontend
+    container_name: pmt-frontend-app
     ports:
       - "80:80"
     depends_on:
