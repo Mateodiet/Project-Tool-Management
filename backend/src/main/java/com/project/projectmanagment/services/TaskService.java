@@ -30,6 +30,7 @@ public class TaskService {
     private final TaskHistoryRepository historyRepository;
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
+    private final EmailService emailService;
 
     @Transactional
     public ApiResponse createTask(CreateTaskRequest request) {
@@ -144,6 +145,9 @@ public class TaskService {
                 task.getAssignedTo() != null ? task.getAssignedTo().toString() : null, 
                 request.getAssignedTo().toString(), updatedBy);
             task.setAssignedTo(request.getAssignedTo());
+            
+            // US11: Send email notification when task is assigned
+            sendAssignmentNotification(request.getAssignedTo(), task.getTaskName(), task.getProjectId());
         }
 
         task.setUpdatedAt(new Date(System.currentTimeMillis()));
@@ -219,6 +223,23 @@ public class TaskService {
             .changedAt(new Timestamp(System.currentTimeMillis()))
             .build();
         historyRepository.save(history);
+    }
+
+    private void sendAssignmentNotification(Long assignedToUserId, String taskName, Long projectId) {
+        try {
+            Optional<UserEntity> userOpt = userRepository.findById(assignedToUserId);
+            Optional<ProjectEntity> projectOpt = projectRepository.findById(projectId);
+            
+            if (userOpt.isPresent() && projectOpt.isPresent()) {
+                emailService.sendTaskAssignmentNotification(
+                    userOpt.get().getEmail(),
+                    taskName,
+                    projectOpt.get().getProjectName()
+                );
+            }
+        } catch (Exception e) {
+            log.error("Failed to send assignment notification: {}", e.getMessage());
+        }
     }
 
     private TaskDTO toDTO(TaskEntity task) {

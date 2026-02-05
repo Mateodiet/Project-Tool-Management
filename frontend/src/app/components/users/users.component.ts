@@ -22,7 +22,6 @@ import { User } from '../../models/user.model';
               <th>Email</th>
               <th>Contact</th>
               <th>Status</th>
-              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -36,24 +35,9 @@ import { User } from '../../models/user.model';
                   {{ user.isActive ? 'Active' : 'Inactive' }}
                 </span>
               </td>
-              <td>
-                <button 
-                  *ngIf="user.isActive" 
-                  class="btn btn-secondary btn-sm" 
-                  (click)="deactivateUser(user)"
-                  data-testid="button-deactivate-user">
-                  Deactivate
-                </button>
-                <button 
-                  class="btn btn-danger btn-sm" 
-                  (click)="deleteUser(user)"
-                  data-testid="button-delete-user">
-                  Delete
-                </button>
-              </td>
             </tr>
             <tr *ngIf="users.length === 0">
-              <td colspan="6" style="text-align: center; color: #999;">No users found</td>
+              <td colspan="5" style="text-align: center; color: #999;">No users found</td>
             </tr>
           </tbody>
         </table>
@@ -86,23 +70,5 @@ export class UsersComponent implements OnInit {
       },
       error: (err) => console.error('Failed to load users', err)
     });
-  }
-
-  deactivateUser(user: User): void {
-    if (confirm(`Deactivate user ${user.name}?`)) {
-      this.userService.deactivateUser(user.userId).subscribe({
-        next: () => this.loadUsers(),
-        error: (err) => console.error('Failed to deactivate user', err)
-      });
-    }
-  }
-
-  deleteUser(user: User): void {
-    if (confirm(`Delete user ${user.name}? This action cannot be undone.`)) {
-      this.userService.deleteUser(user.userId).subscribe({
-        next: () => this.loadUsers(),
-        error: (err) => console.error('Failed to delete user', err)
-      });
-    }
   }
 }

@@ -6,6 +6,10 @@ import { ProjectService } from '../../services/project.service';
 import { AuthService } from '../../services/auth.service';
 import { Project } from '../../models/project.model';
 
+interface ProjectWithRole extends Project {
+  userRole?: string;
+}
+
 @Component({
   selector: 'app-projects',
   standalone: true,
@@ -44,7 +48,7 @@ import { Project } from '../../models/project.model';
                 <button class="btn btn-primary btn-sm" (click)="viewProject(project)" data-testid="button-view-project">
                   View
                 </button>
-                <button class="btn btn-danger btn-sm" (click)="deleteProject(project)" data-testid="button-delete-project">
+                <button *ngIf="isProjectAdmin(project)" class="btn btn-danger btn-sm" (click)="deleteProject(project)" data-testid="button-delete-project">
                   Delete
                 </button>
               </td>
@@ -122,9 +126,10 @@ import { Project } from '../../models/project.model';
   `]
 })
 export class ProjectsComponent implements OnInit {
-  projects: Project[] = [];
+  projects: ProjectWithRole[] = [];
   showCreateModal = false;
   error = '';
+  projectRoles: Map<string, string> = new Map();
 
   newProject: Partial<Project> = {
     projectName: '',
@@ -148,10 +153,32 @@ export class ProjectsComponent implements OnInit {
       next: (response) => {
         if (response.data) {
           this.projects = response.data;
+          this.loadUserRolesForProjects();
         }
       },
       error: (err) => console.error('Failed to load projects', err)
     });
+  }
+
+  loadUserRolesForProjects(): void {
+    const email = this.authService.currentUser?.email;
+    if (!email) return;
+
+    this.projects.forEach(project => {
+      this.projectService.getMemberRole(project.projectName, email).subscribe({
+        next: (res) => {
+          if (res.data && res.data.role) {
+            this.projectRoles.set(project.projectName, res.data.role);
+          }
+        },
+        error: () => {}
+      });
+    });
+  }
+
+  isProjectAdmin(project: Project): boolean {
+    const role = this.projectRoles.get(project.projectName);
+    return role === 'ADMIN' || role === 'ADMINISTRATEUR';
   }
 
   createProject(): void {

@@ -1,9 +1,11 @@
 -- PMT Initial Data Seeds
 INSERT INTO user_tl (name, email, password, contact_number, created_at, is_active) VALUES
 ('Admin User', 'admin@pmt.com', 'password123', '0600000001', CURDATE(), true),
-('John Developer', 'john@pmt.com', 'password123', '0600000002', CURDATE(), true),
-('Marie Designer', 'marie@pmt.com', 'password123', '0600000003', CURDATE(), true),
-('Pierre Observer', 'pierre@pmt.com', 'password123', '0600000004', CURDATE(), true)
+('John Doe', 'john@pmt.com', 'password123', '0600000002', CURDATE(), true),
+('Marie Datin', 'marie@pmt.com', 'password123', '0600000003', CURDATE(), true),
+('Pierre Obiar', 'pierre@pmt.com', 'password123', '0600000004', CURDATE(), true),
+('Jean Martin', 'jean@pmt.com', 'password123', '0600000005', CURDATE(), true),
+('Nicolas', 'nicolas@pmt.com', 'password123', '0600000006', CURDATE(), true)
 ON DUPLICATE KEY UPDATE email = email;
 
 -- Projects
