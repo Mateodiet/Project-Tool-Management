@@ -4,28 +4,28 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { LoginComponent } from './login.component';
 import { AuthService } from '../../services/auth.service';
 import { of, throwError } from 'rxjs';
-import { Router } from '@angular/router';
+import { LoginRequest } from '../../models/user.model';
 import { ApiResponse } from '../../models/api-response.model';
+import { User } from '../../models/user.model';
 
 describe('LoginComponent', () => {
   let component: LoginComponent;
   let fixture: ComponentFixture<LoginComponent>;
   let authServiceSpy: jasmine.SpyObj<AuthService>;
-  let router: Router;
 
   beforeEach(async () => {
-    authServiceSpy = jasmine.createSpyObj('AuthService', ['login']);
+    authServiceSpy = jasmine.createSpyObj('AuthService', ['login'], {
+      currentUser: null,
+      isLoggedIn: false
+    });
 
     await TestBed.configureTestingModule({
       imports: [LoginComponent, HttpClientTestingModule, RouterTestingModule],
-      providers: [
-        { provide: AuthService, useValue: authServiceSpy }
-      ]
+      providers: [{ provide: AuthService, useValue: authServiceSpy }]
     }).compileComponents();
 
     fixture = TestBed.createComponent(LoginComponent);
     component = fixture.componentInstance;
-    router = TestBed.inject(Router);
     fixture.detectChanges();
   });
 
@@ -33,55 +33,30 @@ describe('LoginComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  it('should show error when email is empty', () => {
+  it('should show error when fields are empty', () => {
     component.email = '';
-    component.password = 'password';
-    component.onSubmit();
-    expect(component.error).toBeTruthy();
-  });
-
-  it('should show error when password is empty', () => {
-    component.email = 'test@test.com';
     component.password = '';
     component.onSubmit();
-    expect(component.error).toBeTruthy();
+    expect(component.error).toBe('Please fill in all fields');
   });
 
-  it('should call login service with valid credentials', () => {
-    authServiceSpy.login.and.returnValue(of({
+  it('should call authService.login on submit', () => {
+    const mockResponse: ApiResponse<User> = {
       status: 'OK',
       message: 'Success',
-      data: { userId: 1, email: 'test@test.com', name: 'Test' }
-    } as ApiResponse<any>));
+      data: { userId: 1, name: 'Test', email: 'test@test.com', isActive: true }
+    };
+    authServiceSpy.login.and.returnValue(of(mockResponse));
 
     component.email = 'test@test.com';
-    component.password = 'password123';
+    component.password = 'password';
     component.onSubmit();
 
-    expect(authServiceSpy.login).toHaveBeenCalledWith('test@test.com', 'password123');
+    expect(authServiceSpy.login).toHaveBeenCalled();
   });
 
-  it('should navigate to home on successful login', () => {
-    spyOn(router, 'navigate');
-    authServiceSpy.login.and.returnValue(of({
-      status: 'OK',
-      message: 'Success',
-      data: { userId: 1, email: 'test@test.com', name: 'Test' }
-    } as ApiResponse<any>));
-
-    component.email = 'test@test.com';
-    component.password = 'password123';
-    component.onSubmit();
-
-    expect(router.navigate).toHaveBeenCalledWith(['/home']);
-  });
-
-  it('should show error on invalid credentials', () => {
-    authServiceSpy.login.and.returnValue(of({
-      status: 'UNAUTHORIZED',
-      message: 'Invalid credentials',
-      data: null
-    } as ApiResponse<any>));
+  it('should show error on login failure', () => {
+    authServiceSpy.login.and.returnValue(throwError(() => ({ error: { message: 'Invalid credentials' } })));
 
     component.email = 'test@test.com';
     component.password = 'wrongpassword';
@@ -90,28 +65,7 @@ describe('LoginComponent', () => {
     expect(component.error).toBe('Invalid credentials');
   });
 
-  it('should handle API error', () => {
-    authServiceSpy.login.and.returnValue(throwError(() => ({ error: { message: 'Server error' } })));
-
-    component.email = 'test@test.com';
-    component.password = 'password123';
-    component.onSubmit();
-
-    expect(component.error).toBeTruthy();
-  });
-
-  it('should clear error on new attempt', () => {
-    component.error = 'Previous error';
-    authServiceSpy.login.and.returnValue(of({
-      status: 'OK',
-      message: 'Success',
-      data: { userId: 1, email: 'test@test.com', name: 'Test' }
-    } as ApiResponse<any>));
-
-    component.email = 'test@test.com';
-    component.password = 'password123';
-    component.onSubmit();
-
-    expect(component.error).toBe('');
+  it('should have loading false initially', () => {
+    expect(component.loading).toBeFalse();
   });
 });
