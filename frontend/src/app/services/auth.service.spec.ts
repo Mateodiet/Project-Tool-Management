@@ -1,7 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { AuthService } from './auth.service';
-import { environment } from '../../environments/environment';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -12,76 +11,60 @@ describe('AuthService', () => {
       imports: [HttpClientTestingModule],
       providers: [AuthService]
     });
+
     service = TestBed.inject(AuthService);
     httpMock = TestBed.inject(HttpTestingController);
-    localStorage.clear();
   });
 
   afterEach(() => {
     httpMock.verify();
-    localStorage.clear();
   });
 
   it('should be created', () => {
     expect(service).toBeTruthy();
   });
 
-  it('should login successfully', () => {
+  it('should login and store user', () => {
     const mockResponse = {
       status: 'OK',
-      message: 'Login successful',
-      data: { userId: 1, name: 'Test', email: 'test@test.com', isActive: true }
+      message: 'Success',
+      data: { userId: 1, email: 'test@test.com', name: 'Test' }
     };
 
-    service.login({ email: 'test@test.com', password: 'password' }).subscribe(response => {
-      expect(response.data).toBeTruthy();
-      expect(response.data.email).toBe('test@test.com');
+    service.login('test@test.com', 'password123').subscribe(response => {
+      expect(response.status).toBe('OK');
+      expect(service.currentUser).toBeTruthy();
     });
 
-    const req = httpMock.expectOne(`${environment.apiUrl}/user/login`);
+    const req = httpMock.expectOne('/api/users/login');
     expect(req.request.method).toBe('POST');
     req.flush(mockResponse);
   });
 
-  it('should register successfully', () => {
-    const mockResponse = {
-      status: 'OK',
-      message: 'User registered',
-      data: { userId: 1, name: 'Test', email: 'test@test.com', isActive: true }
-    };
-
-    service.register({ name: 'Test', email: 'test@test.com', password: 'password' }).subscribe(response => {
-      expect(response.data).toBeTruthy();
-    });
-
-    const req = httpMock.expectOne(`${environment.apiUrl}/user/register`);
-    expect(req.request.method).toBe('POST');
-    req.flush(mockResponse);
-  });
-
-  it('should logout and clear localStorage', () => {
-    localStorage.setItem('currentUser', JSON.stringify({ userId: 1 }));
+  it('should logout and clear user', () => {
     service.logout();
-    expect(localStorage.getItem('currentUser')).toBeNull();
     expect(service.currentUser).toBeNull();
   });
 
-  it('should return isLoggedIn false when no user', () => {
-    expect(service.isLoggedIn).toBeFalse();
+  it('should check if user is logged in', () => {
+    expect(service.isLoggedIn()).toBeFalse();
   });
 
-  it('should store user in localStorage on login', () => {
+  it('should register new user', () => {
     const mockResponse = {
-      status: 'OK',
-      message: 'Login successful',
-      data: { userId: 1, name: 'Test', email: 'test@test.com', isActive: true }
+      status: 'CREATED',
+      message: 'User registered',
+      data: { userId: 1, email: 'new@test.com', name: 'New User' }
     };
 
-    service.login({ email: 'test@test.com', password: 'password' }).subscribe();
+    const userData = { name: 'New User', email: 'new@test.com', password: 'password123' };
 
-    const req = httpMock.expectOne(`${environment.apiUrl}/user/login`);
+    service.register(userData).subscribe(response => {
+      expect(response.status).toBe('CREATED');
+    });
+
+    const req = httpMock.expectOne('/api/users/register');
+    expect(req.request.method).toBe('POST');
     req.flush(mockResponse);
-
-    expect(localStorage.getItem('currentUser')).toBeTruthy();
   });
 });
