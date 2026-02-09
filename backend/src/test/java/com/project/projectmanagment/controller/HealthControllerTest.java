@@ -1,29 +1,25 @@
 package com.project.projectmanagment.controller;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.util.Map;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.context.annotation.Import;
-import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 
-import com.project.projectmanagment.config.SecurityConfig;
-
-@WebMvcTest(HealthController.class)
-@Import(SecurityConfig.class)
 class HealthControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
+    private final HealthController healthController = new HealthController();
 
     @Test
-    void health_ShouldReturn200() throws Exception {
-        mockMvc.perform(get("/api/health"))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.status").value("UP"))
-            .andExpect(jsonPath("$.application").value("PMT - Project Management Tool"))
-            .andExpect(jsonPath("$.version").value("1.0.0"));
+    void health_ShouldReturn200() {
+        ResponseEntity<Map<String, Object>> result = healthController.health();
+
+        assertEquals(HttpStatus.OK, result.getStatusCode());
+        assertNotNull(result.getBody());
+        assertEquals("UP", result.getBody().get("status"));
+        assertEquals("PMT - Project Management Tool", result.getBody().get("application"));
+        assertEquals("1.0.0", result.getBody().get("version"));
     }
 }

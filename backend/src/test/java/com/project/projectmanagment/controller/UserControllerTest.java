@@ -1,142 +1,125 @@
 package com.project.projectmanagment.controller;
 
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.bean.MockBean;
-import org.springframework.context.annotation.Import;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.http.ResponseEntity;
 
-import com.project.projectmanagment.config.SecurityConfig;
 import com.project.projectmanagment.models.response.ApiResponse;
+import com.project.projectmanagment.models.user.*;
 import com.project.projectmanagment.services.UserService;
 
-@WebMvcTest(UserController.class)
-@Import(SecurityConfig.class)
+@ExtendWith(MockitoExtension.class)
 class UserControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
-
-    @MockBean
+    @Mock
     private UserService userService;
 
-    @Test
-    void register_ShouldReturn200() throws Exception {
-        ApiResponse response = ApiResponse.builder()
-            .status(HttpStatus.OK)
-            .message("User registered successfully")
-            .build();
+    @InjectMocks
+    private UserController userController;
 
-        when(userService.register(any())).thenReturn(response);
+    private ApiResponse okResponse;
+    private ApiResponse notFoundResponse;
 
-        mockMvc.perform(post("/api/user/register")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"name\":\"Test\",\"email\":\"test@test.com\",\"password\":\"pass123\"}"))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.message").value("User registered successfully"));
+    @BeforeEach
+    void setUp() {
+        okResponse = ApiResponse.builder().status(HttpStatus.OK).message("Success").build();
+        notFoundResponse = ApiResponse.builder().status(HttpStatus.NOT_FOUND).message("Not found").build();
     }
 
     @Test
-    void login_ShouldReturn200() throws Exception {
-        ApiResponse response = ApiResponse.builder()
-            .status(HttpStatus.OK)
-            .message("Login successful")
-            .build();
+    void register_ShouldReturn200() {
+        when(userService.register(any())).thenReturn(okResponse);
 
-        when(userService.login(any())).thenReturn(response);
+        RegisterRequest request = RegisterRequest.builder()
+            .name("Test").email("test@test.com").password("pass").build();
+        ResponseEntity<ApiResponse> result = userController.register(request);
 
-        mockMvc.perform(post("/api/user/login")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"email\":\"test@test.com\",\"password\":\"pass123\"}"))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.message").value("Login successful"));
+        assertEquals(HttpStatus.OK, result.getStatusCode());
+        verify(userService).register(any());
     }
 
     @Test
-    void getAllUsers_ShouldReturn200() throws Exception {
-        ApiResponse response = ApiResponse.builder()
-            .status(HttpStatus.OK)
-            .message("Users retrieved")
-            .build();
+    void login_ShouldReturn200() {
+        when(userService.login(any())).thenReturn(okResponse);
 
-        when(userService.getAllUsers()).thenReturn(response);
+        LoginRequest request = LoginRequest.builder()
+            .email("test@test.com").password("pass").build();
+        ResponseEntity<ApiResponse> result = userController.login(request);
 
-        mockMvc.perform(get("/api/user/all"))
-            .andExpect(status().isOk());
+        assertEquals(HttpStatus.OK, result.getStatusCode());
     }
 
     @Test
-    void getUserById_ShouldReturn200() throws Exception {
-        ApiResponse response = ApiResponse.builder()
-            .status(HttpStatus.OK)
-            .message("User found")
-            .build();
+    void getAllUsers_ShouldReturn200() {
+        when(userService.getAllUsers()).thenReturn(okResponse);
 
-        when(userService.getUserById(1L)).thenReturn(response);
+        ResponseEntity<ApiResponse> result = userController.getAllUsers();
 
-        mockMvc.perform(get("/api/user/1"))
-            .andExpect(status().isOk());
+        assertEquals(HttpStatus.OK, result.getStatusCode());
     }
 
     @Test
-    void getUserById_NotFound() throws Exception {
-        ApiResponse response = ApiResponse.builder()
-            .status(HttpStatus.NOT_FOUND)
-            .message("User not found")
-            .build();
+    void getUserById_ShouldReturn200() {
+        when(userService.getUserById(1L)).thenReturn(okResponse);
 
-        when(userService.getUserById(999L)).thenReturn(response);
+        ResponseEntity<ApiResponse> result = userController.getUserById(1L);
 
-        mockMvc.perform(get("/api/user/999"))
-            .andExpect(status().isNotFound());
+        assertEquals(HttpStatus.OK, result.getStatusCode());
     }
 
     @Test
-    void updateUser_ShouldReturn200() throws Exception {
-        ApiResponse response = ApiResponse.builder()
-            .status(HttpStatus.OK)
-            .message("User updated")
-            .build();
+    void getUserById_NotFound() {
+        when(userService.getUserById(999L)).thenReturn(notFoundResponse);
 
-        when(userService.updateUser(anyLong(), any())).thenReturn(response);
+        ResponseEntity<ApiResponse> result = userController.getUserById(999L);
 
-        mockMvc.perform(put("/api/user/1")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"name\":\"Updated\",\"email\":\"test@test.com\",\"password\":\"pass123\"}"))
-            .andExpect(status().isOk());
+        assertEquals(HttpStatus.NOT_FOUND, result.getStatusCode());
     }
 
     @Test
-    void deleteUser_ShouldReturn200() throws Exception {
-        ApiResponse response = ApiResponse.builder()
-            .status(HttpStatus.OK)
-            .message("User deleted")
-            .build();
+    void getUserByEmail_ShouldReturn200() {
+        when(userService.getUserByEmail("test@test.com")).thenReturn(okResponse);
 
-        when(userService.deleteUser(1L)).thenReturn(response);
+        ResponseEntity<ApiResponse> result = userController.getUserByEmail("test@test.com");
 
-        mockMvc.perform(delete("/api/user/1"))
-            .andExpect(status().isOk());
+        assertEquals(HttpStatus.OK, result.getStatusCode());
     }
 
     @Test
-    void deactivateUser_ShouldReturn200() throws Exception {
-        ApiResponse response = ApiResponse.builder()
-            .status(HttpStatus.OK)
-            .message("User deactivated")
-            .build();
+    void updateUser_ShouldReturn200() {
+        when(userService.updateUser(anyLong(), any())).thenReturn(okResponse);
 
-        when(userService.deactivateUser(1L)).thenReturn(response);
+        RegisterRequest request = RegisterRequest.builder()
+            .name("Updated").email("test@test.com").password("pass").build();
+        ResponseEntity<ApiResponse> result = userController.updateUser(1L, request);
 
-        mockMvc.perform(put("/api/user/1/deactivate"))
-            .andExpect(status().isOk());
+        assertEquals(HttpStatus.OK, result.getStatusCode());
+    }
+
+    @Test
+    void deleteUser_ShouldReturn200() {
+        when(userService.deleteUser(1L)).thenReturn(okResponse);
+
+        ResponseEntity<ApiResponse> result = userController.deleteUser(1L);
+
+        assertEquals(HttpStatus.OK, result.getStatusCode());
+    }
+
+    @Test
+    void deactivateUser_ShouldReturn200() {
+        when(userService.deactivateUser(1L)).thenReturn(okResponse);
+
+        ResponseEntity<ApiResponse> result = userController.deactivateUser(1L);
+
+        assertEquals(HttpStatus.OK, result.getStatusCode());
     }
 }

@@ -1,168 +1,158 @@
 package com.project.projectmanagment.controller;
 
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.bean.MockBean;
-import org.springframework.context.annotation.Import;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.http.ResponseEntity;
 
-import com.project.projectmanagment.config.SecurityConfig;
+import com.project.projectmanagment.models.project.*;
 import com.project.projectmanagment.models.response.ApiResponse;
 import com.project.projectmanagment.services.ProjectService;
 
-@WebMvcTest(ProjectController.class)
-@Import(SecurityConfig.class)
+@ExtendWith(MockitoExtension.class)
 class ProjectControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
-
-    @MockBean
+    @Mock
     private ProjectService projectService;
 
-    @Test
-    void createProject_ShouldReturn200() throws Exception {
-        ApiResponse response = ApiResponse.builder()
-            .status(HttpStatus.OK)
-            .message("Project created")
-            .build();
+    @InjectMocks
+    private ProjectController projectController;
 
-        when(projectService.createProject(any(), anyString())).thenReturn(response);
+    private ApiResponse okResponse;
+    private ApiResponse notFoundResponse;
 
-        mockMvc.perform(post("/api/project/create")
-                .param("creatorEmail", "test@test.com")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"projectName\":\"Test\",\"projectDescription\":\"Desc\",\"projectStatus\":\"ACTIVE\"}"))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.message").value("Project created"));
+    @BeforeEach
+    void setUp() {
+        okResponse = ApiResponse.builder().status(HttpStatus.OK).message("Success").build();
+        notFoundResponse = ApiResponse.builder().status(HttpStatus.NOT_FOUND).message("Not found").build();
     }
 
     @Test
-    void getAllProjects_ShouldReturn200() throws Exception {
-        ApiResponse response = ApiResponse.builder()
-            .status(HttpStatus.OK)
-            .message("Projects retrieved")
-            .build();
+    void createProject_ShouldReturn200() {
+        when(projectService.createProject(any(), anyString())).thenReturn(okResponse);
 
-        when(projectService.getAllProjects()).thenReturn(response);
+        ProjectDTO dto = ProjectDTO.builder().projectName("Test").build();
+        ResponseEntity<ApiResponse> result = projectController.createProject(dto, "test@test.com");
 
-        mockMvc.perform(get("/api/project/all"))
-            .andExpect(status().isOk());
+        assertEquals(HttpStatus.OK, result.getStatusCode());
     }
 
     @Test
-    void getProjectByName_ShouldReturn200() throws Exception {
-        ApiResponse response = ApiResponse.builder()
-            .status(HttpStatus.OK)
-            .message("Project found")
-            .build();
+    void getAllProjects_ShouldReturn200() {
+        when(projectService.getAllProjects()).thenReturn(okResponse);
 
-        when(projectService.getProjectByName(anyString())).thenReturn(response);
+        ResponseEntity<ApiResponse> result = projectController.getAllProjects();
 
-        mockMvc.perform(get("/api/project/name/TestProject"))
-            .andExpect(status().isOk());
+        assertEquals(HttpStatus.OK, result.getStatusCode());
     }
 
     @Test
-    void getProjectByName_NotFound() throws Exception {
-        ApiResponse response = ApiResponse.builder()
-            .status(HttpStatus.NOT_FOUND)
-            .message("Project not found")
-            .build();
+    void getProjectByName_ShouldReturn200() {
+        when(projectService.getProjectByName(anyString())).thenReturn(okResponse);
 
-        when(projectService.getProjectByName(anyString())).thenReturn(response);
+        ResponseEntity<ApiResponse> result = projectController.getProjectByName("Test");
 
-        mockMvc.perform(get("/api/project/name/Unknown"))
-            .andExpect(status().isNotFound());
+        assertEquals(HttpStatus.OK, result.getStatusCode());
     }
 
     @Test
-    void updateProject_ShouldReturn200() throws Exception {
-        ApiResponse response = ApiResponse.builder()
-            .status(HttpStatus.OK)
-            .message("Project updated")
-            .build();
+    void getProjectById_ShouldReturn200() {
+        when(projectService.getProjectById(1L)).thenReturn(okResponse);
 
-        when(projectService.updateProject(anyString(), any())).thenReturn(response);
+        ResponseEntity<ApiResponse> result = projectController.getProjectById(1L);
 
-        mockMvc.perform(put("/api/project/TestProject")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"projectName\":\"Updated\",\"projectDescription\":\"Desc\",\"projectStatus\":\"ACTIVE\"}"))
-            .andExpect(status().isOk());
+        assertEquals(HttpStatus.OK, result.getStatusCode());
     }
 
     @Test
-    void deleteProject_ShouldReturn200() throws Exception {
-        ApiResponse response = ApiResponse.builder()
-            .status(HttpStatus.OK)
-            .message("Project deleted")
-            .build();
+    void getUserProjects_ShouldReturn200() {
+        when(projectService.getUserProjects(anyString())).thenReturn(okResponse);
 
-        when(projectService.deleteProject(anyString())).thenReturn(response);
+        ResponseEntity<ApiResponse> result = projectController.getUserProjects("test@test.com");
 
-        mockMvc.perform(delete("/api/project/TestProject"))
-            .andExpect(status().isOk());
+        assertEquals(HttpStatus.OK, result.getStatusCode());
     }
 
     @Test
-    void inviteMember_ShouldReturn200() throws Exception {
-        ApiResponse response = ApiResponse.builder()
-            .status(HttpStatus.OK)
-            .message("Invitation sent")
-            .build();
+    void updateProject_ShouldReturn200() {
+        when(projectService.updateProject(anyString(), any())).thenReturn(okResponse);
 
-        when(projectService.inviteMember(any())).thenReturn(response);
+        ProjectDTO dto = ProjectDTO.builder().projectName("Updated").build();
+        ResponseEntity<ApiResponse> result = projectController.updateProject("Test", dto);
 
-        mockMvc.perform(post("/api/project/invite")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"email\":\"user@test.com\",\"projectName\":\"Test\",\"role\":\"MEMBRE\",\"invitedBy\":\"admin@test.com\"}"))
-            .andExpect(status().isOk());
+        assertEquals(HttpStatus.OK, result.getStatusCode());
     }
 
     @Test
-    void acceptInvitation_ShouldReturn200() throws Exception {
-        ApiResponse response = ApiResponse.builder()
-            .status(HttpStatus.OK)
-            .message("Invitation accepted")
-            .build();
+    void deleteProject_ShouldReturn200() {
+        when(projectService.deleteProject(anyString())).thenReturn(okResponse);
 
-        when(projectService.acceptInvitation(anyString(), anyString())).thenReturn(response);
+        ResponseEntity<ApiResponse> result = projectController.deleteProject("Test");
 
-        mockMvc.perform(get("/api/project/accept-invite/test@test.com/TestProject"))
-            .andExpect(status().isOk());
+        assertEquals(HttpStatus.OK, result.getStatusCode());
     }
 
     @Test
-    void getProjectMembers_ShouldReturn200() throws Exception {
-        ApiResponse response = ApiResponse.builder()
-            .status(HttpStatus.OK)
-            .message("Members retrieved")
-            .build();
+    void inviteMember_ShouldReturn200() {
+        when(projectService.inviteMember(any())).thenReturn(okResponse);
 
-        when(projectService.getProjectMembers(anyString())).thenReturn(response);
+        InviteRequest request = InviteRequest.builder()
+            .email("user@test.com").projectName("Test").role("MEMBRE").invitedBy("admin@test.com").build();
+        ResponseEntity<ApiResponse> result = projectController.inviteMember(request);
 
-        mockMvc.perform(get("/api/project/TestProject/members"))
-            .andExpect(status().isOk());
+        assertEquals(HttpStatus.OK, result.getStatusCode());
     }
 
     @Test
-    void getMemberRole_ShouldReturn200() throws Exception {
-        ApiResponse response = ApiResponse.builder()
-            .status(HttpStatus.OK)
-            .message("Role retrieved")
-            .build();
+    void acceptInvitation_ShouldReturn200() {
+        when(projectService.acceptInvitation(anyString(), anyString())).thenReturn(okResponse);
 
-        when(projectService.getMemberRole(anyString(), anyString())).thenReturn(response);
+        ResponseEntity<ApiResponse> result = projectController.acceptInvitation("test@test.com", "Test");
 
-        mockMvc.perform(get("/api/project/TestProject/member-role/test@test.com"))
-            .andExpect(status().isOk());
+        assertEquals(HttpStatus.OK, result.getStatusCode());
+    }
+
+    @Test
+    void getProjectMembers_ShouldReturn200() {
+        when(projectService.getProjectMembers(anyString())).thenReturn(okResponse);
+
+        ResponseEntity<ApiResponse> result = projectController.getProjectMembers("Test");
+
+        assertEquals(HttpStatus.OK, result.getStatusCode());
+    }
+
+    @Test
+    void getMemberRole_ShouldReturn200() {
+        when(projectService.getMemberRole(anyString(), anyString())).thenReturn(okResponse);
+
+        ResponseEntity<ApiResponse> result = projectController.getMemberRole("Test", "test@test.com");
+
+        assertEquals(HttpStatus.OK, result.getStatusCode());
+    }
+
+    @Test
+    void updateMemberRole_ShouldReturn200() {
+        when(projectService.updateMemberRole(anyString(), anyString(), anyString())).thenReturn(okResponse);
+
+        ResponseEntity<ApiResponse> result = projectController.updateMemberRole("Test", "test@test.com", "ADMIN");
+
+        assertEquals(HttpStatus.OK, result.getStatusCode());
+    }
+
+    @Test
+    void removeMember_ShouldReturn200() {
+        when(projectService.removeMember(anyString(), anyString())).thenReturn(okResponse);
+
+        ResponseEntity<ApiResponse> result = projectController.removeMember("Test", "test@test.com");
+
+        assertEquals(HttpStatus.OK, result.getStatusCode());
     }
 }

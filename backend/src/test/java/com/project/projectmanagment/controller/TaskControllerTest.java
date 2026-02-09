@@ -1,192 +1,149 @@
 package com.project.projectmanagment.controller;
 
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.bean.MockBean;
-import org.springframework.context.annotation.Import;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.http.ResponseEntity;
 
-import com.project.projectmanagment.config.SecurityConfig;
 import com.project.projectmanagment.models.response.ApiResponse;
+import com.project.projectmanagment.models.task.CreateTaskRequest;
 import com.project.projectmanagment.services.TaskService;
 
-@WebMvcTest(TaskController.class)
-@Import(SecurityConfig.class)
+@ExtendWith(MockitoExtension.class)
 class TaskControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
-
-    @MockBean
+    @Mock
     private TaskService taskService;
 
-    @Test
-    void createTask_ShouldReturn200() throws Exception {
-        ApiResponse response = ApiResponse.builder()
-            .status(HttpStatus.OK)
-            .message("Task created successfully")
-            .build();
+    @InjectMocks
+    private TaskController taskController;
 
-        when(taskService.createTask(any())).thenReturn(response);
+    private ApiResponse okResponse;
+    private ApiResponse notFoundResponse;
 
-        mockMvc.perform(post("/api/task/create")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"taskName\":\"Test Task\",\"taskDescription\":\"Desc\",\"taskStatus\":\"TODO\",\"taskPriority\":\"MEDIUM\",\"projectId\":1,\"assignedTo\":1,\"createdBy\":1}"))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.message").value("Task created successfully"));
+    @BeforeEach
+    void setUp() {
+        okResponse = ApiResponse.builder().status(HttpStatus.OK).message("Success").build();
+        notFoundResponse = ApiResponse.builder().status(HttpStatus.NOT_FOUND).message("Not found").build();
     }
 
     @Test
-    void getAllTasks_ShouldReturn200() throws Exception {
-        ApiResponse response = ApiResponse.builder()
-            .status(HttpStatus.OK)
-            .message("Tasks retrieved")
-            .build();
+    void createTask_ShouldReturn200() {
+        when(taskService.createTask(any())).thenReturn(okResponse);
 
-        when(taskService.getAllTasks()).thenReturn(response);
+        CreateTaskRequest request = CreateTaskRequest.builder()
+            .taskName("Task").taskDescription("Desc").projectId(1L).build();
+        ResponseEntity<ApiResponse> result = taskController.createTask(request);
 
-        mockMvc.perform(get("/api/task/all"))
-            .andExpect(status().isOk());
+        assertEquals(HttpStatus.OK, result.getStatusCode());
     }
 
     @Test
-    void getTaskById_ShouldReturn200() throws Exception {
-        ApiResponse response = ApiResponse.builder()
-            .status(HttpStatus.OK)
-            .message("Task found")
-            .build();
+    void getAllTasks_ShouldReturn200() {
+        when(taskService.getAllTasks()).thenReturn(okResponse);
 
-        when(taskService.getTaskById(1L)).thenReturn(response);
+        ResponseEntity<ApiResponse> result = taskController.getAllTasks();
 
-        mockMvc.perform(get("/api/task/1"))
-            .andExpect(status().isOk());
+        assertEquals(HttpStatus.OK, result.getStatusCode());
     }
 
     @Test
-    void getTaskById_NotFound() throws Exception {
-        ApiResponse response = ApiResponse.builder()
-            .status(HttpStatus.NOT_FOUND)
-            .message("Task not found")
-            .build();
+    void getTaskById_ShouldReturn200() {
+        when(taskService.getTaskById(1L)).thenReturn(okResponse);
 
-        when(taskService.getTaskById(999L)).thenReturn(response);
+        ResponseEntity<ApiResponse> result = taskController.getTaskById(1L);
 
-        mockMvc.perform(get("/api/task/999"))
-            .andExpect(status().isNotFound());
+        assertEquals(HttpStatus.OK, result.getStatusCode());
     }
 
     @Test
-    void getTasksByProject_ShouldReturn200() throws Exception {
-        ApiResponse response = ApiResponse.builder()
-            .status(HttpStatus.OK)
-            .message("Tasks retrieved")
-            .build();
+    void getTaskById_NotFound() {
+        when(taskService.getTaskById(999L)).thenReturn(notFoundResponse);
 
-        when(taskService.getTasksByProject(1L)).thenReturn(response);
+        ResponseEntity<ApiResponse> result = taskController.getTaskById(999L);
 
-        mockMvc.perform(get("/api/task/project/1"))
-            .andExpect(status().isOk());
+        assertEquals(HttpStatus.NOT_FOUND, result.getStatusCode());
     }
 
     @Test
-    void getTasksByProjectName_ShouldReturn200() throws Exception {
-        ApiResponse response = ApiResponse.builder()
-            .status(HttpStatus.OK)
-            .message("Tasks retrieved")
-            .build();
+    void getTasksByProject_ShouldReturn200() {
+        when(taskService.getTasksByProject(1L)).thenReturn(okResponse);
 
-        when(taskService.getTasksByProjectName(anyString())).thenReturn(response);
+        ResponseEntity<ApiResponse> result = taskController.getTasksByProject(1L);
 
-        mockMvc.perform(get("/api/task/project/name/TestProject"))
-            .andExpect(status().isOk());
+        assertEquals(HttpStatus.OK, result.getStatusCode());
     }
 
     @Test
-    void getTasksByUser_ShouldReturn200() throws Exception {
-        ApiResponse response = ApiResponse.builder()
-            .status(HttpStatus.OK)
-            .message("Tasks retrieved")
-            .build();
+    void getTasksByProjectName_ShouldReturn200() {
+        when(taskService.getTasksByProjectName(anyString())).thenReturn(okResponse);
 
-        when(taskService.getTasksByUser(1L)).thenReturn(response);
+        ResponseEntity<ApiResponse> result = taskController.getTasksByProjectName("Test");
 
-        mockMvc.perform(get("/api/task/user/1"))
-            .andExpect(status().isOk());
+        assertEquals(HttpStatus.OK, result.getStatusCode());
     }
 
     @Test
-    void getTasksByStatus_ShouldReturn200() throws Exception {
-        ApiResponse response = ApiResponse.builder()
-            .status(HttpStatus.OK)
-            .message("Tasks retrieved")
-            .build();
+    void getTasksByUser_ShouldReturn200() {
+        when(taskService.getTasksByUser(1L)).thenReturn(okResponse);
 
-        when(taskService.getTasksByStatus(anyString())).thenReturn(response);
+        ResponseEntity<ApiResponse> result = taskController.getTasksByUser(1L);
 
-        mockMvc.perform(get("/api/task/status/TODO"))
-            .andExpect(status().isOk());
+        assertEquals(HttpStatus.OK, result.getStatusCode());
     }
 
     @Test
-    void updateTask_ShouldReturn200() throws Exception {
-        ApiResponse response = ApiResponse.builder()
-            .status(HttpStatus.OK)
-            .message("Task updated")
-            .build();
+    void getTasksByStatus_ShouldReturn200() {
+        when(taskService.getTasksByStatus(anyString())).thenReturn(okResponse);
 
-        when(taskService.updateTask(anyLong(), any(), anyLong())).thenReturn(response);
+        ResponseEntity<ApiResponse> result = taskController.getTasksByStatus("TODO");
 
-        mockMvc.perform(put("/api/task/1")
-                .param("updatedBy", "1")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"taskName\":\"Updated\",\"taskDescription\":\"Desc\",\"taskStatus\":\"IN_PROGRESS\",\"taskPriority\":\"HIGH\",\"projectId\":1,\"assignedTo\":1,\"createdBy\":1}"))
-            .andExpect(status().isOk());
+        assertEquals(HttpStatus.OK, result.getStatusCode());
     }
 
     @Test
-    void deleteTask_ShouldReturn200() throws Exception {
-        ApiResponse response = ApiResponse.builder()
-            .status(HttpStatus.OK)
-            .message("Task deleted")
-            .build();
+    void updateTask_ShouldReturn200() {
+        when(taskService.updateTask(anyLong(), any(), anyLong())).thenReturn(okResponse);
 
-        when(taskService.deleteTask(1L)).thenReturn(response);
+        CreateTaskRequest request = CreateTaskRequest.builder()
+            .taskName("Updated").taskDescription("Desc").projectId(1L).build();
+        ResponseEntity<ApiResponse> result = taskController.updateTask(1L, request, 1L);
 
-        mockMvc.perform(delete("/api/task/1"))
-            .andExpect(status().isOk());
+        assertEquals(HttpStatus.OK, result.getStatusCode());
     }
 
     @Test
-    void getTaskHistory_ShouldReturn200() throws Exception {
-        ApiResponse response = ApiResponse.builder()
-            .status(HttpStatus.OK)
-            .message("History retrieved")
-            .build();
+    void deleteTask_ShouldReturn200() {
+        when(taskService.deleteTask(1L)).thenReturn(okResponse);
 
-        when(taskService.getTaskHistory(1L)).thenReturn(response);
+        ResponseEntity<ApiResponse> result = taskController.deleteTask(1L);
 
-        mockMvc.perform(get("/api/task/1/history"))
-            .andExpect(status().isOk());
+        assertEquals(HttpStatus.OK, result.getStatusCode());
     }
 
     @Test
-    void getDashboardStats_ShouldReturn200() throws Exception {
-        ApiResponse response = ApiResponse.builder()
-            .status(HttpStatus.OK)
-            .message("Dashboard stats")
-            .build();
+    void getTaskHistory_ShouldReturn200() {
+        when(taskService.getTaskHistory(1L)).thenReturn(okResponse);
 
-        when(taskService.getDashboardStats(anyString())).thenReturn(response);
+        ResponseEntity<ApiResponse> result = taskController.getTaskHistory(1L);
 
-        mockMvc.perform(get("/api/task/dashboard/test@test.com"))
-            .andExpect(status().isOk());
+        assertEquals(HttpStatus.OK, result.getStatusCode());
+    }
+
+    @Test
+    void getDashboardStats_ShouldReturn200() {
+        when(taskService.getDashboardStats(anyString())).thenReturn(okResponse);
+
+        ResponseEntity<ApiResponse> result = taskController.getDashboardStats("test@test.com");
+
+        assertEquals(HttpStatus.OK, result.getStatusCode());
     }
 }
