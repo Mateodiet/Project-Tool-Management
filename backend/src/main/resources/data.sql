@@ -27,7 +27,6 @@ INSERT INTO project_member_tl (user_id, project_id, role, status, joined_at) VAL
 (2, 3, 'ADMIN', 'ACCEPTED', DATE_ADD(CURDATE(), INTERVAL -60 DAY)),
 (1, 3, 'MEMBRE', 'ACCEPTED', DATE_ADD(CURDATE(), INTERVAL -55 DAY))
 ON DUPLICATE KEY UPDATE role = role;
-
 -- Tasks for E-Commerce Platform (Project 1)
 INSERT INTO task_tl (task_name, task_description, task_status, task_priority, due_date, project_id_fk, assigned_to, created_by, created_at, updated_at) VALUES
 ('Setup project structure', 'Initialize the project with proper folder structure and dependencies', 'COMPLETED', 'HIGH', DATE_ADD(CURDATE(), INTERVAL -10 DAY), 1, 2, 1, DATE_ADD(CURDATE(), INTERVAL -15 DAY), DATE_ADD(CURDATE(), INTERVAL -10 DAY)),
